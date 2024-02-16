@@ -1,33 +1,36 @@
 #!/usr/bin/python3
-"""
-Using https://jsonplaceholder.typicode.com
-gathers data from API and exports it to CSV file
-Implemented using recursion
-"""
-import re
+'''
+Module contains python script for making an api call and writing response to
+csv file
+'''
+import csv
 import requests
 import sys
 
 
-API = "https://jsonplaceholder.typicode.com"
-"""REST API url"""
-
-
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if re.fullmatch(r'\d+', sys.argv[1]):
-            id = int(sys.argv[1])
-            user_res = requests.get('{}/users/{}'.format(API, id)).json()
-            todos_res = requests.get('{}/todos'.format(API)).json()
-            user_name = user_res.get('username')
-            todos = list(filter(lambda x: x.get('userId') == id, todos_res))
-            with open('{}.csv'.format(id), 'w') as file:
-                for todo in todos:
-                    file.write(
-                        '"{}","{}","{}","{}"\n'.format(
-                            id,
-                            user_name,
-                            todo.get('completed'),
-                            todo.get('title')
-                        )
-                    )
+
+    user_id = sys.argv[1]
+    url = 'https://jsonplaceholder.typicode.com/users/{}/'.format(user_id)
+    todos_url = url + 'todos'
+    user = requests.get(url).json()
+    todos = requests.get(todos_url).json()
+
+    dict_list = []
+    for todo in todos:
+        new_dict = {}
+        new_dict['userId'] = user.get('id')
+        new_dict['username'] = user.get('username')
+        new_dict['completed'] = todo.get('completed')
+        new_dict['title'] = todo.get('title')
+        dict_list.append(new_dict)
+
+    file_name = '{}.csv'.format(user.get('id'))
+
+    with open(file_name, mode='w') as csv_file:
+        fieldnames = ['userId', 'username', 'completed', 'title']
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames, quotechar='"',
+                                quoting=csv.QUOTE_ALL)
+
+        for dict in dict_list:
+            writer.writerow(dict)

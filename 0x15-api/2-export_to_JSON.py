@@ -1,37 +1,32 @@
 #!/usr/bin/python3
-"""
-Using https://jsonplaceholder.typicode.com
-gathers data from API and exports it to JSON file
-Implemented using recursion
-"""
+'''
+Module contains python script for making an api call and writing response to
+csv file
+'''
 import json
-import re
 import requests
 import sys
 
 
-API = "https://jsonplaceholder.typicode.com"
-"""REST API url"""
-
-
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if re.fullmatch(r'\d+', sys.argv[1]):
-            id = int(sys.argv[1])
-            user_res = requests.get('{}/users/{}'.format(API, id)).json()
-            todos_res = requests.get('{}/todos'.format(API)).json()
-            user_name = user_res.get('username')
-            todos = list(filter(lambda x: x.get('userId') == id, todos_res))
-            with open("{}.json".format(id), 'w') as json_file:
-                user_data = list(map(
-                    lambda x: {
-                        "task": x.get("title"),
-                        "completed": x.get("completed"),
-                        "username": user_name
-                    },
-                    todos
-                ))
-                user_data = {
-                    "{}".format(id): user_data
-                }
-                json.dump(user_data, json_file)
+
+    user_id = sys.argv[1]
+    url = 'https://jsonplaceholder.typicode.com/users/{}/'.format(user_id)
+    todos_url = url + 'todos'
+    user = requests.get(url).json()
+    todos = requests.get(todos_url).json()
+
+    todo_list = []
+    for todo in todos:
+        new_dict = {}
+        new_dict['task'] = todo.get('title')
+        new_dict['completed'] = todo.get('completed')
+        new_dict['username'] = user.get('username')
+        todo_list.append(new_dict)
+
+    todo_dict = {user.get('id'): todo_list}
+
+    file_name = '{}.json'.format(user.get('id'))
+
+    with open(file_name, mode='w') as outfile:
+        json.dump(todo_dict, outfile)
